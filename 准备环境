@@ -1,0 +1,20 @@
+关闭防火墙
+systemctl stop firewalld
+systemctl disable firewalld
+关闭selinux
+ sed -i 'S/enforcing/disable' /etc/selinux/config
+setenforce 0
+关闭swap
+swapoff -a 临时
+vim /etc/fstab 永久 删除最后一行
+添加主机名与IP对应关系
+vim /etc/hosts
+192.168.200.140 k8s-master1
+192.168.200.149 k8s-node1
+192.168.200.133 k8s-node2
+
+将桥接的IPv4流量传递到iptables的链
+cat > /etc/sysctl.d/k8s.conf << EOF
+> net.bridge.bridge-nf-call-ip6tables = 1
+> net.bridge.bridge-nf-call-iptables = 1
+> EOF

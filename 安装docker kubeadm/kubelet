@@ -26,4 +26,82 @@ gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors
 EOF
 
 yum install -y kubelet-1.17.0 kubeadm-1.17.0 kubectl-1.17.0
-systemctl enable kubelet && systemctl start kubelet
+systemctl enable kubelet 
+
+
+kubeadm init --apiserver-advertise-address=192.168.200.140 \
+--image-repository=registry.aliyuncs.com/google_containers \
+--kubernetes-version v1.18.1 \
+--service-cidr=10.1.0.0/16 \
+--pod-network-cidr=10.244.0.0/16
+
+
+kubeadm join 192.168.200.140:6443 --token ukkrp7.8n3zqa8l1bzyaxph --discovery-token-ca-cert-hash 
+
+sha256:f65fe0bb61a7ea2fdbd7a216c61900b96bfd81e99c48f0ea3c69b4b705939c4b
+
+master
+安装pod网络插件
+kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+
+
+node的节点执行
+kubeadm join 192.168.200.140:6443 --token ukkrp7.8n3zqa8l1bzyaxph --discovery-token-ca-cert-hash 
+
+sha256:f65fe0bb61a7ea2fdbd7a216c61900b96bfd81e99c48f0ea3c69b4b705939c4b
+
+[root@k8s-node1 xy]# docker images
+REPOSITORY                                           TAG                 IMAGE ID            CREATED      
+
+       SIZE
+registry.aliyuncs.com/google_containers/kube-proxy   v1.18.1             4e68534e24f6        5 days ago   
+
+       117MB
+quay.io/coreos/flannel                               v0.12.0-amd64       4e9f801d2217        4 weeks ago  
+
+       52.8MB
+registry.aliyuncs.com/google_containers/pause        3.2                 80d28bedfe5d        8 weeks ago  
+
+       683kB
+[root@k8s-node1 xy]# 
+
+
+可以通过kubectl get pods -n kube-system -o wide查看flannel和proxy有两个，一个在master节点上，一个在node01
+
+节点上。
+
+[root@localhost ~]# kubectl get pods -n kube-system -o wide
+NAME                                  READY   STATUS    RESTARTS   AGE     IP                NODE         
+
+ NOMINATED NODE   READINESS GATES
+coredns-7ff77c879f-l27g6              1/1     Running   0          32m     10.244.0.2        k8s-master1  
+
+ <none>           <none>
+coredns-7ff77c879f-nl7dc              1/1     Running   0          32m     10.244.0.3        k8s-master1  
+
+ <none>           <none>
+etcd-k8s-master1                      1/1     Running   0          33m     192.168.200.140   k8s-master1  
+
+ <none>           <none>
+kube-apiserver-k8s-master1            1/1     Running   0          33m     192.168.200.140   k8s-master1  
+
+ <none>           <none>
+kube-controller-manager-k8s-master1   1/1     Running   0          33m     192.168.200.140   k8s-master1  
+
+ <none>           <none>
+kube-flannel-ds-amd64-8hx8g           1/1     Running   0          7m15s   192.168.200.152   k8s-node2    
+
+ <none>           <none>
+kube-flannel-ds-amd64-8xcn9           1/1     Running   1          20m     192.168.200.151   k8s-node1    
+
+ <none>           <none>
+kube-flannel-ds-amd64-tdjfp           1/1     Running   0          28m     192.168.200.140   k8s-master1  
+
+ <none>           <none>
+kube-proxy-2jtkp                      1/1     Running   0          7m15s   192.168.200.152   k8s-node2    
+
+ <none>           <none>
+kube-proxy-95pd4                      1/1     Running   0          32m     192.168.200.140   k8s-master1  
+
+ <none>           <none>
+kube-proxy-wztbl                      1/1     Running   0          20m     192.168.200.151   k8s-node1 
